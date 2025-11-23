@@ -153,7 +153,7 @@ function RagdollService.RespawnChar(char: Model)
 	deadGui.DeathFrame.EndingFrame.ReviveAll:SetAttribute("productName","ReviveAll")
 
 	local newChar = plr.Character
-	task.Spawn(function
+	
 	local newHrp = newChar:FindFirstChild()("HumanoidRootPart")
 	local newHum = newChar:FindFirstChild("Humanoid")
 	local Animator = newHum:FindFirstChild("Animator",2)
@@ -297,4 +297,5 @@ end
 
 
 return RagdollService
+
 
