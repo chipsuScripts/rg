@@ -13,7 +13,7 @@ local RagdollData = require(script.RagdollData)
 local alivePlayers = {}
 
 function RagdollService.init()
-	
+	-- sets up the characters for each player when they join with the functions provided, and inserts them into the aliveplrs table
 	Players.PlayerAdded:Connect(function(plr)
 		plr.CharacterAdded:Connect(function(char)
 			RagdollService.SetupHumanoid(char:WaitForChild("Humanoid"))
@@ -21,7 +21,7 @@ function RagdollService.init()
 			local i = table.find(alivePlayers, plr)
 			if i then table.remove(alivePlayers, i) end
 			table.insert(alivePlayers,plr)
-			char.Humanoid.Died:Connect(function()
+			char.Humanoid.Died:Connect(function() -- on death 
 				RagdollService.RagdollCharacter(char)
 				RagdollService.DropItems(char)
 				print(alivePlayers,#alivePlayers)
@@ -31,24 +31,24 @@ function RagdollService.init()
 		plr:LoadCharacter()
 	end)
 	
-	Players.PlayerRemoving:Connect(function(plr)
+	Players.PlayerRemoving:Connect(function(plr) 
 		local i = table.find(alivePlayers, plr)
 		if i then table.remove(alivePlayers, i) end
-		if #alivePlayers <= 0 then
-			Remotes.DeadUI:FireAllClients("GameOver")
+		if #alivePlayers <= 0 then -- if the player leaves and he was the last one alive, end the game.
+			Remotes.DeadUI:FireAllClients("GameOver") -- the deadUi handles ui on the client, for gameover it will basically play a outro then show a voting screen where plrs can vote to play again.
 			Remotes.VotingInProgress:Fire(true)
 		end
 	end)
 	
-	Remotes.ReviveProduct.Event:Connect(function(data)
-		if type(data) ~= "table" then
-			warn("Invalid revive event data")
+	Remotes.ReviveProduct.Event:Connect(function(data) -- fired from a productservice serverscript, when someone successfully purchases a revive dev product
+		if type(data) ~= "table" then -- safety
+			warn("Invalid revive event data") 
 			return
 		end
 		local action = data.action
 		local players = data.players
 
-		if action == "Revive" then
+		if action == "Revive" then -- if they bought revive urself, then the action will be Revive , if they bought revive all dev product, itll be reviveAll
 			local plr = players[1]
 			if plr and plr.Character then
 				RagdollService.RespawnChar(plr.Character)
@@ -67,26 +67,26 @@ function RagdollService.init()
 	
 end
 
-function RagdollService.DropItems(char: Model)
+function RagdollService.DropItems(char: Model) -- just drops the items from the plr ( called when they die )
 	for _,v in pairs(char:GetChildren()) do
 		if v:IsA("Tool") then
 			v.Parent = workspace
 		end
 	end
-	local plr = Players:GetPlayerFromCharacter(char)
-	for _,v in pairs(plr.Backpack:GetChildren()) do
+	local plr = Players:GetPlayerFromCharacter(char) 
+	for _,v in pairs(plr.Backpack:GetChildren()) do -- checking backpack too incase they weren't holding it
 		if v:IsA("Tool") then
 			v.Parent = workspace
 		end
 	end
 end
 
-function RagdollService.SetupHumanoid(Hum : Humanoid)
-	Hum.BreakJointsOnDeath = false
-	Hum.RequiresNeck = false
+function RagdollService.SetupHumanoid(Hum : Humanoid) 
+	Hum.BreakJointsOnDeath = false -- disables the joints breaking on death so we can do a ragdoll
+	Hum.RequiresNeck = false 
 end
 
-function RagdollService.BuildCollisionParts(char)
+function RagdollService.BuildCollisionParts(char) -- basically clone every bodypart inside the character and make it invis noncollideable..., and weld it to the main part
 	for _,v in pairs(char:GetChildren()) do
 		if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
 			local p : BasePart = v:Clone()
@@ -109,14 +109,14 @@ function RagdollService.BuildCollisionParts(char)
 end
 
 
-function RagdollService.EnableMotor6D(char: Model,enabled : boolean)
+function RagdollService.EnableMotor6D(char: Model,enabled : boolean) -- looping in everything in the char, and enabling(or disable) it (motor6d) so we can do a nice ragdoll
 	for _,v in pairs(char:GetDescendants()) do
 		if v.Name == "Handle" or v.Name == "RootJoint" or v.Name == "Neck" then continue end
 		if v:IsA("Motor6D") then v.Enabled = enabled end
 	end
 end
 
-function RagdollService.DestroyJoints(char: Model)
+function RagdollService.DestroyJoints(char: Model) -- clear up the char (called on death)
 	for _,v in pairs(char:GetDescendants()) do
 		if v.Name == "RAGDOLL_ATTACHMENT" or v.Name == "RAGDOLL_CONSTRAINT" then v:Destroy() end
 		
@@ -137,7 +137,7 @@ function RagdollService.EnableCollsioinParts(char: Model,enabled)
 	end
 end
 
-function RagdollService.RespawnChar(char: Model)
+function RagdollService.RespawnChar(char: Model) -- just revives the plr, addes them to aliveplrs, fires some signals to the client
 	
 	local plr = Players:GetPlayerFromCharacter(char)
 	local deathPosition = char.HumanoidRootPart.Position
@@ -149,8 +149,8 @@ function RagdollService.RespawnChar(char: Model)
 	table.insert(alivePlayers,plr)
 	local plrGui = plr:WaitForChild("PlayerGui")
 	local deadGui = plrGui:WaitForChild("DeadGUI")
-	deadGui.SpectateFrame.Revive:SetAttribute("productName","Revive")	
-	deadGui.DeathFrame.EndingFrame.ReviveAll:SetAttribute("productName","ReviveAll")
+	deadGui.SpectateFrame.Revive:SetAttribute("productName","Revive") -- since the gui restarts on death, my ui script wont set the button "revive" a target productName, so this is to make sure that it's updated.
+	deadGui.DeathFrame.EndingFrame.ReviveAll:SetAttribute("productName","ReviveAll")-- same here
 
 	local newChar = plr.Character
 	
@@ -168,7 +168,7 @@ function RagdollService.RespawnChar(char: Model)
 end
 
 
-function RagdollService.BuildJoints(char: Model)
+function RagdollService.BuildJoints(char: Model) -- ball socket constraint to make realistic ragdoll ,here we are making 2 attachments ,
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	
 	for _,v in pairs(char:GetDescendants()) do
@@ -181,8 +181,8 @@ function RagdollService.BuildJoints(char: Model)
 		local joint = Instance.new("BallSocketConstraint")
 		
 		a0.Name = "RAGDOLL_ATTACHMENT"
-		a0.Parent = v
-		a0.CFrame = RagdollData[v.Name].CFrame[2]
+		a0.Parent = v  a0 is going to be inside the bodypart 
+		a0.CFrame = RagdollData[v.Name].CFrame[2] 
 		
 		a1.Name = "RAGDOLL_ATTACHMENT"
 		a1.Parent = hrp
@@ -208,9 +208,9 @@ function RagdollService.RagdollCharacter(char: Model)
 	RagdollService.EnableMotor6D(char,false)
 	RagdollService.BuildJoints(char)
 	RagdollService.EnableCollsioinParts(char,true)
-	RagdollService.CreateProximityPrompt(char)
-	local highlight = script.DeadHighlight:Clone()
-	highlight.Parent = char
+	RagdollService.CreateProximityPrompt(char) 
+	local highlight = script.DeadHighlight:Clone() -- clone not new for performance 
+	highlight.Parent = char 
 	highlight.Enabled = true
 	
 	local i = table.find(alivePlayers,plr)
@@ -234,7 +234,7 @@ function RagdollService.RagdollCharacter(char: Model)
 	end
 end
 
-function RagdollService.CreateProximityPrompt(char: Model)
+function RagdollService.CreateProximityPrompt(char: Model) -- addes a proximity so plrs can revive the downed plr
 	
 	local client = Players:GetPlayerFromCharacter(char)
 	local hum = char:FindFirstChild("Humanoid")
@@ -263,7 +263,7 @@ function RagdollService.CreateProximityPrompt(char: Model)
 end
 
 
-function RagdollService.UnRagdollCharacter(char: Model)
+function RagdollService.UnRagdollCharacter(char: Model) -- could be used if a custom health tracking system is being used, instead of loading the character again just unragdoll them
 
 	local plr = Players:GetPlayerFromCharacter(char)
 	local hum = char:FindFirstChild("Humanoid")
@@ -297,5 +297,6 @@ end
 
 
 return RagdollService
+
 
 
