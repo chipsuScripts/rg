@@ -153,15 +153,16 @@ function RagdollService.RespawnChar(char: Model)
 	deadGui.DeathFrame.EndingFrame.ReviveAll:SetAttribute("productName","ReviveAll")
 
 	local newChar = plr.Character
-	local newHrp = newChar:WaitForChild("HumanoidRootPart")
-	local newHum = newChar:WaitForChild("Humanoid")
-	local Animator = newHum:WaitForChild("Animator",2)
-	newHrp.CFrame = CFrame.new(deathPosition)
-	if Animator then
+	task.Spawn(function
+	local newHrp = newChar:FindFirstChild()("HumanoidRootPart")
+	local newHum = newChar:FindFirstChild("Humanoid")
+	local Animator = newHum:FindFirstChild("Animator",2)
+	if Animator and newHrp and newHum then
 		task.wait(0.05)
 		local anim = Animator:LoadAnimation(script.Revive)
 		anim:Play()
 	end
+	newHrp.CFrame = CFrame.new(deathPosition)
 	
 	
 end
@@ -296,3 +297,4 @@ end
 
 
 return RagdollService
+
